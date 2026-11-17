@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Visual & Smart Classifier | Powered by Teachable Machine</title>
+    
+    <!-- Google Fonts: Inter for maximum legibility -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        warm: {
+                            50: '#FAF9F6',
+                            100: '#F3F1EC',
+                            200: '#E5E1D8',
+                            800: '#292524',
+                            900: '#1C1917',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- TensorFlow.js & Google Teachable Machine Libraries (Image, Pose, Speech) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8.6/dist/teachablemachine-pose.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.5.4/dist/speech-commands.min.js"></script>
+
+    <style>
+        /* Custom Accessibility Overrides & Smooth Focus Rings */
+        :root {
+            --font-scale: 1;
+        }
+        html {
+            font-size: calc(16px * var(--font-scale));
+        }
+
+        /* High Contrast Mode Overrides (WCAG AAA) */
+        body.high-contrast {
+            background-color: #000000 !important;
+            color: #FFFFFF !important;
+        }
+        body.high-contrast .card-surface {
+            background-color: #0A0A0A !important;
+            border: 2px solid #FFFFFF !important;
+            color: #FFFFFF !important;
+            box-shadow: none !important;
+        }
+        body.high-contrast .sub-surface {
+            background-color: #171717 !important;
+            border: 1px solid #FFD700 !important;
+            color: #FFFFFF !important;
+        }
+        body.high-contrast .text-muted {
+            color: #E5E5E5 !important;
+        }
+        body.high-contrast .btn-primary {
+            background-color: #FFD700 !important;
+            color: #000000 !important;
+            border: 2px solid #FFFFFF !important;
+            font-weight: 800 !important;
+        }
+        body.high-contrast .btn-secondary {
+            background-color: #000000 !important;
+            color: #FFD700 !important;
+            border: 2px solid #FFD700 !important;
+        }
+        body.high-contrast .progress-track {
+            background-color: #262626 !important;
+            border: 1px solid #FFFFFF !important;
+        }
+        body.high-contrast .progress-fill-top {
+            background-color: #FFD700 !important;
+        }
+        body.high-contrast .progress-fill-normal {
+            background-color: #38BDF8 !important;
+        }
+        body.high-contrast .badge-highlight {
+            background-color: #FFD700 !important;
+            color: #000000 !important;
+        }
+
+        /* Reduced Motion Overrides */
+        body.reduced-motion *,
+        body.reduced-motion *::before,
+        body.reduced-motion *::after {
+            animation-duration: 0.001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.001ms !important;
+            scroll-behavior: auto !important;
+        }
+
+        /* Accessible Keyboard Focus Indicator */
+        *:focus-visible {
+            outline: 3px solid #4F46E5;
+            outline-offset: 3px;
+        }
+        body.high-contrast *:focus-visible {
+            outline: 3px solid #FFD700;
+            outline-offset: 3px;
+        }
+
+        /* Mirror webcam video for natural user experience */
+        .mirror-canvas {
+            transform: scaleX(-1);
+        }
+    </style>
+</head>
+<body class="bg-warm-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white">
+
+    <!-- Skip to Main Content Link for Keyboard & Screen Reader Users -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-5 focus:py-3 focus:bg-indigo-700 focus:text-white focus:font-bold focus:rounded-xl focus:shadow-lg">
+        Skip directly to AI Classifier
+    </a>
+
+    <!-- Top Accessibility & Inclusivity Toolbar -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-sm" role="region" aria-label="Accessibility Controls">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wide text-slate-200">
+                <svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span>Accessibility &amp; Display Options:</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- High Contrast Toggle -->
+                <button id="toggle-contrast" type="button" aria-pressed="false"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>High Contrast</span>
+                </button>
+
+                <!-- Larger Text Toggle -->
+                <button id="toggle-text-size" type="button" aria-pressed="false"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10m-10 6h6" />
+                    </svg>
+                    <span>Larger Text</span>
+                </button>
+
+                <!-- Reduced Motion Toggle -->
+                <button id="toggle-motion" type="button" aria-pressed="false"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Reduce Motion</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hero & Introduction Section -->
+    <div class="bg-white border-b border-warm-200 card-surface">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div class="max-w-2xl">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold uppercase tracking-wider mb-3 badge-highlight">
+                        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        <span id="model-type-badge">Detecting AI Model...</span>
+                    </div>
+                    <h1 id="model-title" class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                        Smart AI Recognition Assistant
+                    </h1>
+                    <p class="mt-2.5 text-base sm:text-lg text-slate-700 text-muted leading-relaxed">
+                        Use your camera or upload any photo from your device to see how the AI recognizes objects and patterns in real time. Simple, fast, and open to everyone.
+                    </p>
+                </div>
+
+                <!-- Privacy First Badge Card -->
+                <div class="sub-surface bg-warm-100 border border-warm-200 rounded-2xl p-4 sm:p-5 max-w-sm shrink-0">
+                    <div class="flex items-start gap-3">
+                        <div class="p-2.5 rounded-xl bg-emerald-100 text-emerald-900 shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900">100% Private &amp; Local</h2>
+                            <p class="text-xs sm:text-sm text-slate-700 text-muted mt-1 leading-relaxed">
+                                Your camera feed and photos <strong>never leave your device</strong>. All AI analysis runs directly inside your web browser.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Interactive Workspace -->
+    <main id="main-content" class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+        <!-- Screen Reader Live Region for Dynamic Prediction Announcements -->
+        <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+        <!-- Global Alert / Friendly Status Banner -->
+        <div id="status-banner" role="alert" class="hidden rounded-2xl p-4 sm:p-5 border-2 flex items-start gap-3.5 transition-all">
+            <div id="status-icon" class="shrink-0 mt-0.5"></div>
+            <div class="flex-grow">
+                <h2 id="status-title" class="font-bold text-base">Notice</h2>
+                <p id="status-message" class="text-sm mt-1 leading-relaxed"></p>
+            </div>
+            <button id="dismiss-banner" type="button" aria-label="Dismiss message" class="p-2 rounded-lg hover:bg-black/5 font-bold text-sm cursor-pointer">
+                ✕
+            </button>
+        </div>
+
+        <!-- 3-Step Plain-Language "How It Works" Guide -->
+        <section aria-labelledby="how-it-works-heading" class="card-surface bg-white rounded-2xl border border-warm-200 p-5 sm:p-6 shadow-sm">
+            <h2 id="how-it-works-heading" class="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>How It Works in 3 Easy Steps</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="sub-surface bg-warm-50 rounded-xl p-4 border border-warm-200 flex items-start gap-3.5">
+                    <span class="w-8 h-8 rounded-full bg-indigo-700 text-white font-extrabold text-sm flex items-center justify-center shrink-0 badge-highlight">1</span>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Choose Camera or Photo</h3>
+                        <p class="text-xs sm:text-sm text-slate-700 text-muted mt-1">Turn on your webcam for live scanning, or upload any picture from your phone or computer.</p>
+                    </div>
+                </div>
+                <div class="sub-surface bg-warm-50 rounded-xl p-4 border border-warm-200 flex items-start gap-3.5">
+                    <span class="w-8 h-8 rounded-full bg-indigo-700 text-white font-extrabold text-sm flex items-center justify-center shrink-0 badge-highlight">2</span>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Instant AI Analysis</h3>
+                        <p class="text-xs sm:text-sm text-slate-700 text-muted mt-1">The trained AI model examines visual patterns right on your screen with zero waiting.</p>
+                    </div>
+                </div>
+                <div class="sub-surface bg-warm-50 rounded-xl p-4 border border-warm-200 flex items-start gap-3.5">
+                    <span class="w-8 h-8 rounded-full bg-indigo-700 text-white font-extrabold text-sm flex items-center justify-center shrink-0 badge-highlight">3</span>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Read Confidence Scores</h3>
+                        <p class="text-xs sm:text-sm text-slate-700 text-muted mt-1">See the Top Match highlighted at the top along with easy-to-read percentage bars.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Primary Interactive Grid: Left (Input Source) | Right (AI Results) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+
+            <!-- LEFT COLUMN: Camera & Photo Input Card -->
+            <section aria-labelledby="input-section-heading" class="lg:col-span-6 card-surface bg-white rounded-3xl border border-warm-200 shadow-sm overflow-hidden flex flex-col">
+                <div class="p-5 sm:p-6 border-b border-warm-200 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 id="input-section-heading" class="text-xl font-extrabold text-slate-900">1. Input Source</h2>
+                        <p class="text-sm text-slate-700 text-muted">Start your live camera or pick an image file</p>
+                    </div>
+                    <span id="live-indicator" class="hidden inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 text-rose-900 text-xs font-bold border border-rose-300">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
+                        LIVE CAMERA
+                    </span>
+                </div>
+
+                <!-- Action Control Buttons -->
+                <div class="p-5 sm:p-6 bg-warm-50/70 sub-surface border-b border-warm-200 flex flex-col sm:flex-row gap-3">
+                    <!-- Prominent Start / Stop Camera Button -->
+                    <button id="btn-camera-toggle" type="button" disabled
+                        class="btn-primary flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-300 disabled:text-slate-600 disabled:cursor-not-allowed text-white font-bold text-base shadow-sm transition cursor-pointer">
+                        <svg id="camera-btn-icon" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <span id="camera-btn-label">Loading AI Model...</span>
+                    </button>
+
+                    <!-- Upload an Image Option -->
+                    <label for="image-upload-input" id="btn-upload-label" tabindex="0" role="button" aria-label="Upload an Image from your device"
+                        class="btn-secondary flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 border-2 border-slate-300 font-bold text-base shadow-sm transition cursor-pointer">
+                        <svg class="w-5 h-5 shrink-0 text-indigo-700" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>Upload an Image</span>
+                    </label>
+                    <input id="image-upload-input" type="file" accept="image/*" class="sr-only" aria-label="Choose an image file to analyze" />
+                </div>
+
+                <!-- Visual Display Stage (Webcam Canvas / Uploaded Image / Loading Placeholder) -->
+                <div class="p-5 sm:p-6 flex-grow flex flex-col items-center justify-center">
+                    <div id="media-stage" class="relative w-full aspect-square max-w-md mx-auto rounded-2xl bg-slate-900 overflow-hidden border-2 border-slate-200 flex items-center justify-center shadow-inner">
+                        
+                        <!-- Initial Model Loading Spinner State -->
+                        <div id="stage-loading" class="text-center p-6 text-white flex flex-col items-center">
+                            <svg class="w-12 h-12 text-indigo-400 animate-spin mb-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="font-bold text-lg">Preparing AI Brain...</p>
+                            <p class="text-sm text-slate-300 mt-1">Downloading model weights &amp; labels</p>
+                        </div>
+
+                        <!-- Ready Empty State (Once model is loaded, before user starts camera or uploads) -->
+                        <div id="stage-ready" class="hidden text-center p-6 text-slate-200 flex flex-col items-center">
+                            <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4 text-indigo-400">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <p class="font-bold text-lg text-white">AI Model Ready!</p>
+                            <p class="text-sm text-slate-300 mt-1.5 max-w-xs">
+                                Tap <strong>"Start Camera"</strong> above for live video recognition, or choose <strong>"Upload an Image"</strong> to test a saved picture.
+                            </p>
+                        </div>
+
+                        <!-- Audio Visualizer State (Shown automatically if model is detected as Audio/Speech) -->
+                        <div id="stage-audio" class="hidden text-center p-6 text-white flex flex-col items-center">
+                            <div class="w-20 h-20 rounded-full bg-indigo-600/30 border-2 border-indigo-400 flex items-center justify-center mb-4 animate-pulse">
+                                <svg class="w-10 h-10 text-indigo-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                </svg>
+                            </div>
+                            <p class="font-bold text-lg">Listening via Microphone...</p>
+                            <p class="text-sm text-slate-300 mt-1">Speak or make sounds clearly near your device.</p>
+                        </div>
+
+                        <!-- Container where Teachable Machine Webcam Canvas is injected -->
+                        <div id="webcam-container" class="hidden w-full h-full flex items-center justify-center"></div>
+
+                        <!-- Static Image Preview Container for File Uploads -->
+                        <img id="uploaded-image-preview" alt="Uploaded photo being analyzed by AI" class="hidden w-full h-full object-contain bg-slate-950" />
+                    </div>
+
+                    <!-- Helper tip for Flip Camera or Drag & Drop -->
+                    <p class="text-xs text-slate-600 text-muted text-center mt-3.5">
+                        Tip: You can also drag and drop any image file directly onto the preview box above.
+                    </p>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: AI Confidence Results Card -->
+            <section aria-labelledby="results-section-heading" class="lg:col-span-6 card-surface bg-white rounded-3xl border border-warm-200 shadow-sm overflow-hidden flex flex-col">
+                <div class="p-5 sm:p-6 border-b border-warm-200 flex items-center justify-between gap-3">
+                    <div>
+                        <h2 id="results-section-heading" class="text-xl font-extrabold text-slate-900">2. AI Prediction Results</h2>
+                        <p class="text-sm text-slate-700 text-muted">Confidence scores show how sure the AI is</p>
+                    </div>
+                    <span id="total-classes-badge" class="px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-300">
+                        0 Categories
+                    </span>
+                </div>
+
+                <div class="p-5 sm:p-6 space-y-6 flex-grow">
+                    <!-- Highlighted Top Match Hero Callout -->
+                    <div id="top-match-card" class="sub-surface rounded-2xl bg-indigo-50 border-2 border-indigo-200 p-5 transition-all">
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-indigo-700 text-white text-xs font-extrabold uppercase tracking-wider badge-highlight">
+                                ★ Top Match
+                            </span>
+                            <span id="top-match-confidence-label" class="text-xs font-bold text-indigo-950 text-muted">
+                                Waiting for input
+                            </span>
+                        </div>
+                        <div class="flex items-baseline justify-between gap-4 mt-2">
+                            <h3 id="top-match-name" class="text-2xl sm:text-3xl font-extrabold text-slate-900 break-words">
+                                —
+                            </h3>
+                            <span id="top-match-percent" class="text-2xl sm:text-3xl font-extrabold text-indigo-800 tabular-nums shrink-0">
+                                0%
+                            </span>
+                        </div>
+                        <p id="top-match-explanation" class="text-xs sm:text-sm text-slate-700 text-muted mt-2">
+                            Start your camera or upload an image to see the AI's strongest match here.
+                        </p>
+                    </div>
+
+                    <!-- All Class Confidence Bars List -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-700 text-muted">
+                                All Category Confidence Scores
+                            </h3>
+                            <span class="text-xs text-slate-600 text-muted">0% to 100%</span>
+                        </div>
+
+                        <div id="predictions-list" class="space-y-4" role="list" aria-label="AI Classification Confidence Scores">
+                            <!-- Dynamically populated confidence bars -->
+                            <div class="p-4 rounded-xl border border-dashed border-slate-300 text-center text-sm text-slate-600 text-muted">
+                                Loading category labels from model...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Accessible Footer -->
+    <footer class="bg-white border-t border-warm-200 card-surface mt-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-slate-700 text-muted">
+            <p>
+                Powered by <strong>Google Teachable Machine</strong> &amp; <strong>TensorFlow.js</strong>. Built for universal accessibility (WCAG AAA).
+            </p>
+            <p class="font-mono text-xs bg-warm-100 sub-surface px-3 py-1.5 rounded-lg border border-warm-200 truncate max-w-full">
+                Model ID: FYTKEpAnks
+            </p>
+        </div>
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        /**
+         * Configuration & Global State
+         */
+        const MODEL_BASE_URL = "https://teachablemachine.withgoogle.com/models/FYTKEpAnks/";
+        
+        const state = {
+            model: null,
+            modelType: "image", // Automatically resolved to 'image', 'pose', or 'speech'
+            webcam: null,
+            isWebcamRunning: false,
+            isAudioListening: false,
+            animationFrameId: null,
+            classLabels: [],
+            lastAnnouncedClass: "",
+            lastAnnouncementTime: 0,
+            textScaleIndex: 0 // 0 = 100%, 1 = 115%, 2 = 130%
+        };
+
+        // DOM References
+        const dom = {
+            modelTitle: document.getElementById("model-title"),
+            modelTypeBadge: document.getElementById("model-type-badge"),
+            totalClassesBadge: document.getElementById("total-classes-badge"),
+            btnCameraToggle: document.getElementById("btn-camera-toggle"),
+            cameraBtnLabel: document.getElementById("camera-btn-label"),
+            cameraBtnIcon: document.getElementById("camera-btn-icon"),
+            imageUploadInput: document.getElementById("image-upload-input"),
+            btnUploadLabel: document.getElementById("btn-upload-label"),
+            mediaStage: document.getElementById("media-stage"),
+            stageLoading: document.getElementById("stage-loading"),
+            stageReady: document.getElementById("stage-ready"),
+            stageAudio: document.getElementById("stage-audio"),
+            webcamContainer: document.getElementById("webcam-container"),
+            uploadedImagePreview: document.getElementById("uploaded-image-preview"),
+            liveIndicator: document.getElementById("live-indicator"),
+            predictionsList: document.getElementById("predictions-list"),
+            topMatchName: document.getElementById("top-match-name"),
+            topMatchPercent: document.getElementById("top-match-percent"),
+            topMatchConfidenceLabel: document.getElementById("top-match-confidence-label"),
+            topMatchExplanation: document.getElementById("top-match-explanation"),
+            srAnnouncer: document.getElementById("sr-announcer"),
+            statusBanner: document.getElementById("status-banner"),
+            statusTitle: document.getElementById("status-title"),
+            statusMessage: document.getElementById("status-message"),
+            statusIcon: document.getElementById("status-icon"),
+            dismissBanner: document.getElementById("dismiss-banner")
+        };
+
+        /**
+         * Accessibility Toolbar Controls
+         */
+        function initAccessibilityControls() {
+            const btnContrast = document.getElementById("toggle-contrast");
+            const btnTextSize = document.getElementById("toggle-text-size");
+            const btnMotion = document.getElementById("toggle-motion");
+
+            // Respect user's system reduced-motion preference automatically
+            if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                document.body.classList.add("reduced-motion");
+                btnMotion.setAttribute("aria-pressed", "true");
+                btnMotion.classList.add("ring-2", "ring-indigo-400");
+            }
+
+            btnContrast.addEventListener("click", () => {
+                const isEnabled = document.body.classList.toggle("high-contrast");
+                btnContrast.setAttribute("aria-pressed", String(isEnabled));
+                announceToScreenReader(isEnabled ? "High contrast mode enabled" : "High contrast mode disabled");
+            });
+
+            const scales = [1, 1.15, 1.3];
+            const scaleLabels = ["Larger Text", "Text: Large (115%)", "Text: Extra Large (130%)"];
+            btnTextSize.addEventListener("click", () => {
+                state.textScaleIndex = (state.textScaleIndex + 1) % scales.length;
+                document.documentElement.style.setProperty("--font-scale", scales[state.textScaleIndex]);
+                const isEnlarged = state.textScaleIndex > 0;
+                btnTextSize.setAttribute("aria-pressed", String(isEnlarged));
+                btnTextSize.querySelector("span").textContent = scaleLabels[state.textScaleIndex];
+                announceToScreenReader(`Text size set to ${Math.round(scales[state.textScaleIndex] * 100)} percent`);
+            });
+
+            btnMotion.addEventListener("click", () => {
+                const isReduced = document.body.classList.toggle("reduced-motion");
+                btnMotion.setAttribute("aria-pressed", String(isReduced));
+                announceToScreenReader(isReduced ? "Reduced motion enabled" : "Animations restored");
+            });
+
+            // Allow keyboard Enter/Space on the custom Upload label button
+            dom.btnUploadLabel.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    dom.imageUploadInput.click();
+                }
+            });
+
+            dom.dismissBanner.addEventListener("click", () => {
+                dom.statusBanner.classList.add("hidden");
+            });
+        }
+
+        /**
+         * Friendly Plain-Language Banner Helper (Replaces alert())
+         */
+        function showBanner(type, title, message) {
+            dom.statusBanner.classList.remove(
+                "hidden",
+                "bg-rose-50", "border-rose-300", "text-rose-950",
+                "bg-amber-50", "border-amber-300", "text-amber-950",
+                "bg-emerald-50", "border-emerald-300", "text-emerald-950"
+            );
+
+            if (type === "error") {
+                dom.statusBanner.classList.add("bg-rose-50", "border-rose-300", "text-rose-950");
+                dom.statusIcon.innerHTML = `<svg class="w-6 h-6 text-rose-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            } else if (type === "warning") {
+                dom.statusBanner.classList.add("bg-amber-50", "border-amber-300", "text-amber-950");
+                dom.statusIcon.innerHTML = `<svg class="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+            } else {
+                dom.statusBanner.classList.add("bg-emerald-50", "border-emerald-300", "text-emerald-950");
+                dom.statusIcon.innerHTML = `<svg class="w-6 h-6 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            }
+
+            dom.statusTitle.textContent = title;
+            dom.statusMessage.textContent = message;
+            announceToScreenReader(`${title}: ${message}`);
+        }
+
+        /**
+         * Screen Reader Live Announcer (Throttled for smooth experience)
+         */
+        function announceToScreenReader(text) {
+            dom.srAnnouncer.textContent = "";
+            setTimeout(() => {
+                dom.srAnnouncer.textContent = text;
+            }, 50);
+        }
+
+        /**
+         * Automatic Model Type Inspection & Initialization
+         * Checks metadata.json to determine if the model is Image, Pose, or Audio/Speech.
+         */
+        async function loadTeachableMachineModel() {
+            const modelURL = MODEL_BASE_URL + "model.json";
+            const metadataURL = MODEL_BASE_URL + "metadata.json";
+
+            try {
+                // Step 1: Fetch metadata.json to detect model type and custom title/labels
+                const metaResponse = await fetch(metadataURL);
+                if (!metaResponse.ok) {
+                    throw new Error(`Could not reach model metadata (HTTP ${metaResponse.status}).`);
+                }
+                const metadata = await metaResponse.json();
+
+                // Update page title if the Teachable Machine project has a custom name
+                if (metadata.modelName && metadata.modelName.trim() !== "" && metadata.modelName !== "tm-my-image-model") {
+                    dom.modelTitle.textContent = metadata.modelName;
+                }
+
+                // Detect model type from packageName in metadata.json
+                const pkg = (metadata.packageName || "").toLowerCase();
+                if (pkg.includes("pose")) {
+                    state.modelType = "pose";
+                } else if (pkg.includes("speech") || pkg.includes("audio") || metadata.wordLabels) {
+                    state.modelType = "speech";
+                } else {
+                    state.modelType = "image";
+                }
+
+                // Step 2: Load the corresponding Teachable Machine runtime
+                if (state.modelType === "pose" && window.tmPose) {
+                    dom.modelTypeBadge.textContent = "Body Pose AI Model";
+                    state.model = await tmPose.load(modelURL, metadataURL);
+                    state.classLabels = state.model.getClassLabels();
+                } else if (state.modelType === "speech" && window.speechCommands) {
+                    dom.modelTypeBadge.textContent = "Audio & Sound AI Model";
+                    state.model = speechCommands.create("BROWSER_FFT", undefined, modelURL, metadataURL);
+                    await state.model.ensureModelLoaded();
+                    state.classLabels = state.model.wordLabels();
+                } else {
+                    // Default & primary path: Image Classification Model
+                    state.modelType = "image";
+                    dom.modelTypeBadge.textContent = "Image Recognition AI Model";
+                    state.model = await tmImage.load(modelURL, metadataURL);
+                    state.classLabels = state.model.getClassLabels();
+                }
+
+                // Step 3: Build UI confidence bars and enable controls
+                dom.totalClassesBadge.textContent = `${state.classLabels.length} ${state.classLabels.length === 1 ? "Category" : "Categories"}`;
+                renderInitialPredictionBars(state.classLabels);
+
+                dom.stageLoading.classList.add("hidden");
+                dom.stageReady.classList.remove("hidden");
+
+                dom.btnCameraToggle.disabled = false;
+                updateCameraButtonUI(false);
+
+            } catch (error) {
+                console.error("Model Initialization Error:", error);
+                dom.stageLoading.innerHTML = `
+                    <div class="text-rose-300 font-bold text-base mb-1">Unable to Load AI Model</div>
+                    <p class="text-xs text-slate-300 max-w-xs">Please check your internet connection and refresh the page to try again.</p>
+                `;
+                dom.cameraBtnLabel.textContent = "Model Unavailable";
+                showBanner(
+                    "error",
+                    "Could Not Load the AI Model",
+                    "We had trouble connecting to Google Teachable Machine (FYTKEpAnks). Please verify your internet connection or try refreshing the page."
+                );
+            }
+        }
+
+        /**
+         * Build accessible confidence bar rows for each class label
+         */
+        function renderInitialPredictionBars(labels) {
+            dom.predictionsList.innerHTML = "";
+            labels.forEach((label, idx) => {
+                const safeId = `pred-bar-${idx}`;
+                const row = document.createElement("div");
+                row.id = `pred-row-${idx}`;
+                row.setAttribute("role", "listitem");
+                row.className = "sub-surface p-3.5 rounded-xl bg-warm-50 border border-warm-200 transition-all";
+
+                row.innerHTML = `
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span id="pred-badge-${idx}" class="hidden px-2 py-0.5 rounded text-[11px] font-extrabold uppercase bg-indigo-700 text-white badge-highlight shrink-0">
+                                Top
+                            </span>
+                            <span class="font-bold text-slate-900 text-sm sm:text-base truncate" title="${escapeHtml(label)}">
+                                ${escapeHtml(label)}
+                            </span>
+                        </div>
+                        <span id="pred-pct-${idx}" class="font-extrabold text-sm sm:text-base text-slate-800 tabular-nums shrink-0">
+                            0%
+                        </span>
+                    </div>
+                    <div class="progress-track w-full h-3.5 bg-slate-200 rounded-full overflow-hidden" role="progressbar" aria-label="${escapeHtml(label)} confidence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="${safeId}-track">
+                        <div id="${safeId}-fill" class="progress-fill-normal h-full bg-slate-500 rounded-full transition-all duration-150 ease-out" style="width: 0%"></div>
+                    </div>
+                `;
+                dom.predictionsList.appendChild(row);
+            });
+        }
+
+        /**
+         * Toggle Live Camera (or Microphone for Speech models)
+         */
+        async function toggleCameraOrAudio() {
+            if (!state.model) return;
+
+            if (state.modelType === "speech") {
+                if (state.isAudioListening) {
+                    stopAudioListening();
+                } else {
+                    await startAudioListening();
+                }
+                return;
+            }
+
+            if (state.isWebcamRunning) {
+                stopWebcam();
+            } else {
+                await startWebcam();
+            }
+        }
+
+        /**
+         * Start Webcam & Real-Time Prediction Loop
+         */
+        async function startWebcam() {
+            try {
+                // Hide uploaded image preview if active
+                dom.uploadedImagePreview.classList.add("hidden");
+                dom.stageReady.classList.add("hidden");
+                dom.statusBanner.classList.add("hidden");
+
+                dom.btnCameraToggle.disabled = true;
+                dom.cameraBtnLabel.textContent = "Starting Camera...";
+
+                const flip = true; // Mirror webcam for natural user orientation
+                const size = 400;
+
+                if (state.modelType === "pose") {
+                    state.webcam = new tmPose.Webcam(size, size, flip);
+                } else {
+                    state.webcam = new tmImage.Webcam(size, size, flip);
+                }
+
+                await state.webcam.setup(); // Requests browser camera permission
+                await state.webcam.play();
+
+                state.isWebcamRunning = true;
+                dom.btnCameraToggle.disabled = false;
+                updateCameraButtonUI(true);
+
+                // Mount canvas cleanly into stage
+                dom.webcamContainer.innerHTML = "";
+                state.webcam.canvas.className = "w-full h-full object-cover";
+                state.webcam.canvas.setAttribute("aria-label", "Live webcam video feed");
+                dom.webcamContainer.appendChild(state.webcam.canvas);
+                dom.webcamContainer.classList.remove("hidden");
+                dom.liveIndicator.classList.remove("hidden");
+
+                announceToScreenReader("Camera started. AI is now analyzing live video.");
+                loopWebcam();
+            } catch (err) {
+                console.error("Camera Permission or Hardware Error:", err);
+                state.isWebcamRunning = false;
+                dom.btnCameraToggle.disabled = false;
+                updateCameraButtonUI(false);
+                dom.stageReady.classList.remove("hidden");
+
+                showBanner(
+                    "error",
+                    "Camera Access Needed or Unavailable",
+                    "We couldn't access your camera. Please allow camera permissions in your browser settings, or use the 'Upload an Image' button instead—it works without a camera!"
+                );
+            }
+        }
+
+        /**
+         * Stop Webcam & Clean Up Streams
+         */
+        function stopWebcam() {
+            state.isWebcamRunning = false;
+            if (state.animationFrameId) {
+                cancelAnimationFrame(state.animationFrameId);
+                state.animationFrameId = null;
+            }
+            if (state.webcam) {
+                try {
+                    state.webcam.stop();
+                } catch (e) { /* ignore stop errors */ }
+                state.webcam = null;
+            }
+
+            dom.webcamContainer.classList.add("hidden");
+            dom.webcamContainer.innerHTML = "";
+            dom.liveIndicator.classList.add("hidden");
+
+            if (dom.uploadedImagePreview.classList.contains("hidden")) {
+                dom.stageReady.classList.remove("hidden");
+            }
+
+            updateCameraButtonUI(false);
+            announceToScreenReader("Camera stopped.");
+        }
+
+        /**
+         * Continuous Animation Loop for Live Webcam Classification
+         */
+        async function loopWebcam() {
+            if (!state.isWebcamRunning || !state.webcam) return;
+            state.webcam.update();
+            await predictFromElement(state.webcam.canvas);
+            state.animationFrameId = window.requestAnimationFrame(loopWebcam);
+        }
+
+        /**
+         * Speech/Audio Model Support (If metadata indicates an Audio model)
+         */
+        async function startAudioListening() {
+            try {
+                dom.stageReady.classList.add("hidden");
+                dom.stageAudio.classList.remove("hidden");
+                state.isAudioListening = true;
+                updateCameraButtonUI(true);
+
+                state.model.listen(result => {
+                    const predictions = state.classLabels.map((label, i) => ({
+                        className: label,
+                        probability: result.scores[i]
+                    }));
+                    updatePredictionUI(predictions);
+                }, {
+                    probabilityThreshold: 0.5,
+                    invokeCallbackOnNoiseAndUnknown: true,
+                    overlapFactor: 0.5
+                });
+            } catch (err) {
+                state.isAudioListening = false;
+                updateCameraButtonUI(false);
+                showBanner("error", "Microphone Access Needed", "Please allow microphone permissions to use this audio model.");
+            }
+        }
+
+        function stopAudioListening() {
+            if (state.model && state.isAudioListening) {
+                state.model.stopListening();
+            }
+            state.isAudioListening = false;
+            dom.stageAudio.classList.add("hidden");
+            dom.stageReady.classList.remove("hidden");
+            updateCameraButtonUI(false);
+        }
+
+        /**
+         * Handle Static Image File Upload (Works for users without cameras)
+         */
+        function handleImageFile(file) {
+            if (!file) return;
+            if (!file.type.startsWith("image/")) {
+                showBanner("warning", "Please Choose an Image File", "The file you selected is not an image. Please pick a JPG, PNG, or WebP picture.");
+                return;
+            }
+            if (!state.model) {
+                showBanner("warning", "Model Still Loading", "Please wait a moment for the AI model to finish loading before uploading an image.");
+                return;
+            }
+
+            // Stop webcam if running so user clearly sees their uploaded photo
+            if (state.isWebcamRunning) {
+                stopWebcam();
+            }
+
+            dom.statusBanner.classList.add("hidden");
+            dom.stageReady.classList.add("hidden");
+            dom.webcamContainer.classList.add("hidden");
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                dom.uploadedImagePreview.onload = async () => {
+                    dom.uploadedImagePreview.classList.remove("hidden");
+                    await predictFromElement(dom.uploadedImagePreview);
+                };
+                dom.uploadedImagePreview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /**
+         * Run Inference on either Webcam Canvas or Uploaded Image Element
+         */
+        async function predictFromElement(visualElement) {
+            if (!state.model) return;
+
+            try {
+                let predictions = [];
+                if (state.modelType === "pose") {
+                    const { posenetOutput } = await state.model.estimatePose(visualElement);
+                    predictions = await state.model.predict(posenetOutput);
+                } else {
+                    predictions = await state.model.predict(visualElement);
+                }
+                updatePredictionUI(predictions);
+            } catch (err) {
+                console.error("Prediction error:", err);
+            }
+        }
+
+        /**
+         * Update Top Match Card, Progress Bars, and Screen Reader Announcements
+         */
+        function updatePredictionUI(predictions) {
+            if (!predictions || predictions.length === 0) return;
+
+            // Find highest probability class while preserving original index order for stable bars
+            let topIndex = 0;
+            let maxProb = -1;
+
+            predictions.forEach((pred, idx) => {
+                if (pred.probability > maxProb) {
+                    maxProb = pred.probability;
+                    topIndex = idx;
+                }
+            });
+
+            const topPrediction = predictions[topIndex];
+            const topPercent = Math.round(topPrediction.probability * 100);
+
+            // Update Top Match Hero Card
+            dom.topMatchName.textContent = topPrediction.className;
+            dom.topMatchPercent.textContent = `${topPercent}%`;
+            dom.topMatchConfidenceLabel.textContent = describeConfidence(topPercent);
+            dom.topMatchExplanation.textContent = `The AI is ${topPercent}% confident that this matches "${topPrediction.className}".`;
+
+            // Update Individual Confidence Bars
+            predictions.forEach((pred, idx) => {
+                const pct = Math.round(pred.probability * 100);
+                const isTop = idx === topIndex && pct > 0;
+
+                const row = document.getElementById(`pred-row-${idx}`);
+                const badge = document.getElementById(`pred-badge-${idx}`);
+                const pctText = document.getElementById(`pred-pct-${idx}`);
+                const track = document.getElementById(`pred-bar-${idx}-track`);
+                const fill = document.getElementById(`pred-bar-${idx}-fill`);
+
+                if (!row || !fill) return;
+
+                pctText.textContent = `${pct}%`;
+                fill.style.width = `${pct}%`;
+                track.setAttribute("aria-valuenow", String(pct));
+
+                if (isTop) {
+                    row.classList.add("border-indigo-500", "bg-indigo-50/60", "shadow-xs");
+                    row.classList.remove("border-warm-200", "bg-warm-50");
+                    badge.classList.remove("hidden");
+                    fill.classList.add("progress-fill-top", "bg-indigo-700");
+                    fill.classList.remove("progress-fill-normal", "bg-slate-500");
+                } else {
+                    row.classList.remove("border-indigo-500", "bg-indigo-50/60", "shadow-xs");
+                    row.classList.add("border-warm-200", "bg-warm-50");
+                    badge.classList.add("hidden");
+                    fill.classList.remove("progress-fill-top", "bg-indigo-700");
+                    fill.classList.add("progress-fill-normal", "bg-slate-500");
+                }
+            });
+
+            // Announce to screen readers when top prediction changes (at most once every 2.5 seconds)
+            const now = Date.now();
+            if (
+                topPercent >= 50 &&
+                topPrediction.className !== state.lastAnnouncedClass &&
+                now - state.lastAnnouncementTime > 2500
+            ) {
+                state.lastAnnouncedClass = topPrediction.className;
+                state.lastAnnouncementTime = now;
+                announceToScreenReader(`Top match: ${topPrediction.className}, ${topPercent} percent confidence.`);
+            }
+        }
+
+        /**
+         * Plain-Language Confidence Descriptor
+         */
+        function describeConfidence(percent) {
+            if (percent >= 85) return "Very High Confidence";
+            if (percent >= 65) return "Good Confidence";
+            if (percent >= 40) return "Moderate Match";
+            return "Low Confidence";
+        }
+
+        /**
+         * Update Primary Button Visual State (Start vs. Stop)
+         */
+        function updateCameraButtonUI(isActive) {
+            const isAudio = state.modelType === "speech";
+            if (isActive) {
+                dom.cameraBtnLabel.textContent = isAudio ? "Stop Microphone" : "Stop Camera";
+                dom.btnCameraToggle.classList.remove("bg-indigo-700", "hover:bg-indigo-800");
+                dom.btnCameraToggle.classList.add("bg-rose-700", "hover:bg-rose-800");
+                dom.cameraBtnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />`;
+            } else {
+                dom.cameraBtnLabel.textContent = isAudio ? "Start Microphone" : "Start Camera";
+                dom.btnCameraToggle.classList.remove("bg-rose-700", "hover:bg-rose-800");
+                dom.btnCameraToggle.classList.add("bg-indigo-700", "hover:bg-indigo-800");
+                dom.cameraBtnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />`;
+            }
+        }
+
+        /**
+         * Safe HTML Escaping for Class Labels
+         */
+        function escapeHtml(str) {
+            const div = document.createElement("div");
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        /**
+         * Event Listeners & Drag-and-Drop Setup
+         */
+        function bindEvents() {
+            dom.btnCameraToggle.addEventListener("click", toggleCameraOrAudio);
+
+            dom.imageUploadInput.addEventListener("change", (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleImageFile(e.target.files[0]);
+                    e.target.value = ""; // Reset so the same file can be re-selected if needed
+                }
+            });
+
+            // Drag & drop image support onto the preview stage
+            dom.mediaStage.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dom.mediaStage.classList.add("ring-4", "ring-indigo-500");
+            });
+            dom.mediaStage.addEventListener("dragleave", () => {
+                dom.mediaStage.classList.remove("ring-4", "ring-indigo-500");
+            });
+            dom.mediaStage.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dom.mediaStage.classList.remove("ring-4", "ring-indigo-500");
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleImageFile(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        // Bootstrap Application on Window Load
+        window.addEventListener("DOMContentLoaded", () => {
+            initAccessibilityControls();
+            bindEvents();
+            loadTeachableMachineModel();
+        });
+    </script>
+</body>
+</html>
